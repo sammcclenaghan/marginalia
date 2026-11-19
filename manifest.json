@@ -1,0 +1,10 @@
+{
+	"id": "marginalia",
+	"name": "Marginalia",
+	"version": "0.1.0",
+	"minAppVersion": "1.13.0",
+	"description": "Notes and questions in the margin of any passage. Your text stays untouched: notes live in a readable section at the end of the file.",
+	"author": "Sam McClenaghan",
+	"authorUrl": "https://github.com/sammcclenaghan",
+	"isDesktopOnly": false
+}
