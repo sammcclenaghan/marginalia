@@ -12,7 +12,7 @@ import { highlights } from '../render/highlights';
 import { findText, indexText, insertAt, textRange } from '../render/text';
 
 /** Blocks that clip what floats out of them: a note for a passage inside goes just before the block. */
-const CLIPS = '.callout, table, .table-wrapper';
+const CLIPS = '.callout, table, .table-wrapper, pre';
 
 /** For notes placed before a clipping block: where their passage starts, to line up with it. */
 export const liftedTo = new WeakMap<HTMLElement, Range>();
@@ -122,13 +122,41 @@ export async function renderSection(el: HTMLElement, ctx: MarkdownPostProcessorC
 		}
 		sides.push({ el: side, note: p.note });
 	}
-	for (const p of parts) highlights.add(el, p.note.label, p.q, p.k, p.note.question);
+	for (const p of parts) {
+		highlights.add(el, p.note.label, p.q, p.k, p.note.question);
+		underlineGaps(el, p);
+	}
 	highlights.schedule(); // the section is usually put on the page after this returns
 	for (const s of sides) {
 		const body = s.el.querySelector<HTMLElement>('.mg-side-body');
 		if (body) await renderNote(hooks.app, s.note.text, body, ctx.sourcePath, child);
 	}
 	hooks.changed();
+}
+
+/**
+ * The browser doesn't draw an underline on a text node that is only spaces
+ * (code highlighting puts every space between tokens in its own node; **bold**
+ * *italic* does it too). Wrap those in a passage, so the highlight painter can
+ * have styles.css draw their underline, as it does for formulas.
+ */
+function underlineGaps(el: HTMLElement, p: Part) {
+	const idx = indexText(el);
+	const at = findText(idx, p.q, p.k);
+	const range = at && textRange(idx, at.start, at.end);
+	if (!range) return;
+	const gaps: Text[] = [];
+	const walker = el.doc.createTreeWalker(range.commonAncestorContainer, NodeFilter.SHOW_TEXT);
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+		if (node.instanceOf(Text) && /^\s+$/.test(node.data) && range.intersectsNode(node) && !node.parentElement?.closest('.mg-space, .mg-side, .mg-marker')) {
+			gaps.push(node);
+		}
+	}
+	for (const node of gaps) {
+		const gap = createSpan({ cls: 'mg-space' });
+		node.replaceWith(gap);
+		gap.append(node);
+	}
 }
 
 /** The outermost clipping block around `node`, inside the section. */

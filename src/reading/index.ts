@@ -29,7 +29,9 @@ export class ReadingNotes {
 
 	register() {
 		const { plugin } = this;
-		plugin.registerMarkdownPostProcessor((el, ctx) => this.process(el, ctx));
+		// After Obsidian's own processing (code highlighting rebuilds a code
+		// block from its text, which would take in our numbers as code).
+		plugin.registerMarkdownPostProcessor((el, ctx) => this.process(el, ctx), 100);
 		plugin.registerEvent(plugin.app.workspace.on('layout-change', () => this.attachAll()));
 		plugin.registerEvent(plugin.app.vault.on('rename', (_file, old) => this.cache.delete(old)));
 		plugin.app.workspace.onLayoutReady(() => this.attachAll());
