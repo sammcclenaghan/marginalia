@@ -1,5 +1,5 @@
 {
-	"name": "obsidian-marginalia",
+	"name": "marginalia",
 	"version": "0.1.0",
 	"description": "Notes and questions in the margin of anything you read or write in Obsidian.",
 	"main": "main.js",
