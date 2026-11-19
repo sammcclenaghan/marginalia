@@ -79,9 +79,22 @@ function escapeQuote(text: string): string {
 		.replace(/^(\d+)([.)])/, '$1\\$2');
 }
 
-/** Formulas in a quote (unescaped `$…$` / `$$…$$`) become placeholders for matching. */
-const toPlaceholders = (raw: string): string =>
-	raw.replace(/(?<!\\)\$\$[\s\S]*?(?<!\\)\$\$|(?<!\\)\$(?!\s)[^$\n]+?(?<!\\)\$/g, MATH);
+/** A formula in a quote: unescaped `$…$` or `$$…$$`. */
+const FORMULA = /(?<!\\)\$\$[\s\S]*?(?<!\\)\$\$|(?<!\\)\$(?!\s)[^$\n]+?(?<!\\)\$/g;
+
+/** Formulas become placeholders for matching. */
+const toPlaceholders = (raw: string): string => raw.replace(FORMULA, MATH);
+
+/** Unescape the text around formulas; a formula's backslashes are its own (`\,`, `\frac`). */
+function unescapeText(raw: string): string {
+	let out = '';
+	let last = 0;
+	for (const m of raw.matchAll(FORMULA)) {
+		out += unescape(raw.slice(last, m.index)) + m[0];
+		last = m.index + m[0].length;
+	}
+	return out + unescape(raw.slice(last));
+}
 
 const jsonString = (s: string): string => JSON.stringify(s).replace(new RegExp(MATH, 'g'), '\\ue000');
 
@@ -197,7 +210,7 @@ export function parseSection(doc: string): Section | null {
 
 		entries.push({
 			quote: paragraphs.map((p) => unescape(toPlaceholders(p))).join('\n\n'),
-			display: paragraphs.map(unescape).join('\n\n'),
+			display: paragraphs.map(unescapeText).join('\n\n'),
 			...context,
 			body: unescapeBody(doc.slice(bodyFrom, bodyTo)),
 			from: first.from,

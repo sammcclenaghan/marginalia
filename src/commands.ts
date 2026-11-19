@@ -1,9 +1,10 @@
 /** Commands and the editor's right-click menu. */
 import { EditorView } from '@codemirror/view';
-import { Editor, MarkdownFileInfo, MarkdownView, Menu } from 'obsidian';
+import { Editor, MarkdownFileInfo, MarkdownView, Menu, WorkspaceLeaf } from 'obsidian';
 import { addNote, deleteNote, jumpToNote, noteAtCursor, viewFor } from './editor/actions';
 import { editNote, notesField } from './editor/state';
 import type MarginaliaPlugin from './main';
+import { PANEL_VIEW } from './panel';
 
 /** A command that runs on the editor's view; `when` decides whether it's available. */
 function editorCommand(
@@ -31,6 +32,12 @@ const hasNotes = (view: EditorView) => view.state.field(notesField).notes.some((
 
 export function registerCommands(plugin: MarginaliaPlugin) {
 	editorCommand(plugin, 'add-note', 'Add note', 'message-square-plus', addNote);
+	plugin.addCommand({
+		id: 'show-notes',
+		name: 'Show all notes',
+		icon: 'message-square-quote',
+		callback: () => void showPanel(plugin),
+	});
 	editorCommand(
 		plugin,
 		'edit-note',
@@ -91,4 +98,15 @@ function editorMenu(menu: Menu, view: EditorView) {
 			.setWarning(true)
 			.onClick(() => deleteNote(view, note.label)),
 	);
+}
+
+/** Open the notes panel in the right sidebar (or bring it forward). */
+async function showPanel(plugin: MarginaliaPlugin) {
+	const { workspace } = plugin.app;
+	let leaf: WorkspaceLeaf | null = workspace.getLeavesOfType(PANEL_VIEW)[0] ?? null;
+	if (!leaf) {
+		leaf = workspace.getRightLeaf(false);
+		await leaf?.setViewState({ type: PANEL_VIEW, active: true });
+	}
+	if (leaf) await workspace.revealLeaf(leaf);
 }

@@ -1,6 +1,7 @@
 import { Extension } from '@codemirror/state';
 import { Plugin } from 'obsidian';
 import { registerCommands } from './commands';
+import { NotesPanel, PANEL_VIEW } from './panel';
 import { marginaliaEditor } from './editor';
 import { ReadingNotes } from './reading';
 import { highlights } from './render/highlights';
@@ -18,6 +19,7 @@ export default class MarginaliaPlugin extends Plugin {
 		this.registerEditorExtension(this.editorExtensions);
 		this.applySettings(false);
 		this.reading.register();
+		this.registerView(PANEL_VIEW, (leaf) => new NotesPanel(leaf));
 		registerCommands(this);
 	}
 

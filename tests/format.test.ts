@@ -96,6 +96,15 @@ describe("notes section", () => {
 	});
 });
 
+describe("quote display", () => {
+	it("unescapes text but keeps a formula's own backslashes", () => {
+		const doc = `A formula: $x^2 \\, dx$ and \\*stars\\*.\n\n${MARKER}\n---\n\n## Notes\n\n> $x^2 \\, dx$ and \\*stars\\*\n\nNote.\n`;
+		const note = buildModel(doc).notes[0];
+		expect(note?.passage).toBe("$x^2 \\, dx$ and *stars*");
+		expect(note?.anchor).not.toBeNull();
+	});
+});
+
 describe("passages without restrictions", () => {
 	it("crosses paragraphs", () => {
 		const sel = "demanding task.\n\nIt's a skill";

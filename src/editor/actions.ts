@@ -1,8 +1,8 @@
 /** What you can do to notes in an editor. Every change is one undoable step. */
 import { EditorView } from '@codemirror/view';
 import { MarkdownFileInfo, Notice } from 'obsidian';
-import { addEntry, Note, noteAt, norm, project, removeEntry, setBody, snapToWords } from '../format';
-import { draftField, editNote, endDraft, notesField, startDraft } from './state';
+import { addEntry, Note, noteAt, norm, project, removeEntry, setBody, setQuote, snapToWords } from '../format';
+import { draftField, editNote, endDraft, notesField, setActive, startDraft } from './state';
 
 /** Each editor's view, by the file info Obsidian hands to commands and menus. */
 const views = new WeakMap<MarkdownFileInfo, EditorView>();
@@ -90,4 +90,32 @@ export function jumpToNote(view: EditorView, dir: 1 | -1) {
 	if (target === undefined) return;
 	view.dispatch({ selection: { anchor: target }, effects: EditorView.scrollIntoView(target, { y: 'center' }) });
 	view.focus();
+}
+
+/** Select a note: put the cursor at its passage, centred, and light it up. */
+export function revealNote(view: EditorView, label: string) {
+	const anchor = view.state.field(notesField).byLabel.get(label)?.anchor;
+	if (!anchor) return;
+	view.dispatch({
+		selection: { anchor: anchor.from },
+		effects: [EditorView.scrollIntoView(anchor.from, { y: 'center' }), setActive.of(label)],
+	});
+	view.focus();
+}
+
+/** Point a note at the selected passage (for a note whose passage was lost). */
+export function reattachNote(view: EditorView, label: string) {
+	const state = view.state;
+	const model = state.field(notesField);
+	const note = model.byLabel.get(label);
+	const sel = state.selection.main;
+	if (!note) return;
+	if (sel.empty) {
+		new Notice('Select the passage to attach the note to first.');
+		return;
+	}
+	const doc = state.doc.toString();
+	const changes = setQuote(doc, model, note, snapToWords(doc, sel.from, sel.to));
+	if (!changes) new Notice('Select a passage in the note itself.');
+	else view.dispatch({ changes, userEvent: 'input.marginalia' });
 }
