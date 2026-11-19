@@ -32,7 +32,8 @@ body {
 /* ------------------------------------------------------------------ */
 /* Note typography                                                     */
 
-.mg-note {
+.mg-note,
+.mg-side {
 	--mg-accent: var(--interactive-accent);
 	font-family: var(--font-interface);
 	font-size: 13px;
@@ -43,7 +44,8 @@ body {
 	text-wrap: pretty;
 	-webkit-font-smoothing: antialiased;
 }
-.mg-note.is-question {
+.mg-note.is-question,
+.mg-side.is-question {
 	--mg-accent: var(--mg-question);
 }
 
@@ -64,25 +66,25 @@ body {
 	opacity: 1;
 }
 
-.mg-note-body > :first-child {
+:is(.mg-note-body, .mg-side-body) > :first-child {
 	margin-top: 0;
 }
-.mg-note-body > :last-child {
+:is(.mg-note-body, .mg-side-body) > :last-child {
 	margin-bottom: 0;
 }
-.mg-note-body p {
+:is(.mg-note-body, .mg-side-body) p {
 	margin: 0.45em 0;
 }
-.mg-note-body :is(strong, b) {
+:is(.mg-note-body, .mg-side-body) :is(strong, b) {
 	font-weight: var(--font-semibold);
 	color: var(--text-normal);
 }
-.mg-note-body code {
+:is(.mg-note-body, .mg-side-body) code {
 	font-size: 0.9em;
 	padding: 0.05em 0.3em;
 	border-radius: 4px;
 }
-.mg-note-body a {
+:is(.mg-note-body, .mg-side-body) a {
 	text-decoration-thickness: 1px;
 	text-underline-offset: 2px;
 }
@@ -157,7 +159,16 @@ body {
 	text-decoration-color: transparent;
 }
 
-/* Passages in rendered widgets and Reading view (CSS Custom Highlight API). */
+/* Passages in rendered widgets and Reading view (CSS Custom Highlight API).
+   Same underline as the marks above: set on the highlight itself, since a
+   highlight doesn't take the offset from the text around it. */
+::highlight(mg-passage),
+::highlight(mg-passage-q),
+::highlight(mg-hover),
+::highlight(mg-hover-q) {
+	text-underline-offset: 0.3em;
+	text-decoration-skip-ink: auto;
+}
 .mg-style-underline ::highlight(mg-passage),
 .mg-style-underline ::highlight(mg-passage-q) {
 	text-decoration: underline 1px color-mix(in srgb, var(--text-faint) 45%, transparent);
@@ -333,11 +344,97 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Reading view: notes float into the margin beside their passages     */
+
+.mg-side {
+	display: none;
+	/* It sits inside the passage's text: don't take on its bold, italics or links. */
+	font-weight: var(--font-normal);
+	font-style: normal;
+	text-decoration: none;
+	text-transform: none;
+}
+.mg-reading.mg-r-margin .mg-side {
+	display: block;
+	position: relative;
+	float: right;
+	clear: right;
+	box-sizing: border-box;
+	width: var(--mg-width);
+	margin-right: calc(-1 * (var(--mg-width) + var(--mg-gap)));
+	margin-top: calc(0.15em + var(--mg-drop, 0px));
+	margin-bottom: 1em;
+	white-space: normal;
+}
+.mg-reading.mg-r-margin .mg-side > .mg-note-num {
+	top: 0;
+	right: calc(100% + 7px);
+}
+.mg-side:hover,
+.mg-side.is-hover,
+.mg-side.is-pinned {
+	color: var(--text-normal);
+}
+:is(.mg-side:hover, .mg-side.is-hover, .mg-side.is-pinned) > .mg-note-num {
+	color: var(--mg-accent);
+	opacity: 1;
+}
+.mg-side-body,
+.mg-side-body > p:first-child {
+	display: inline;
+}
+.mg-reading.mg-r-reserve > .markdown-preview-view {
+	padding-right: var(--mg-reserve);
+}
+.mg-reading.mg-r-margin .mg-side.is-collapsed .mg-side-body {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 1;
+	line-clamp: 1;
+	max-height: calc(13px * var(--mg-line));
+	overflow: hidden;
+}
+
+/* Narrow panes: clicking a number opens its note as a popover under the
+   passage, over the text (nothing reflows), as in Live Preview. */
+.mg-reading.mg-r-narrow .markdown-preview-sizer > div:has(> * .mg-side.is-open, > .mg-side.is-open) {
+	position: relative;
+	z-index: 5;
+}
+.mg-reading.mg-r-narrow .mg-side.is-open {
+	display: block;
+	position: absolute;
+	top: var(--mg-pop-y);
+	left: 0;
+	box-sizing: border-box;
+	width: min(380px, 100%);
+	padding: var(--mg-pad-y) var(--mg-pad-x);
+	white-space: normal;
+	border-radius: var(--mg-radius);
+	color: var(--text-normal);
+	background-color: var(--mg-surface);
+	box-shadow: var(--mg-shadow);
+}
+.mg-reading.mg-r-narrow .mg-side.is-open > .mg-note-num {
+	position: static;
+	margin-right: 6px;
+}
+
+/* The notes section, shown by the margin instead. */
+.mg-reading:is(.mg-r-margin, .mg-r-narrow) .mg-notes-section {
+	display: none;
+}
+
+/* ------------------------------------------------------------------ */
 /* Print and PDF export: the article, then the notes section          */
 
 @media print {
 	.mg-margin,
-	.mg-marker {
+	.mg-marker,
+	.mg-reading .mg-side {
 		display: none;
+	}
+	.mg-reading .mg-notes-section {
+		display: revert;
 	}
 }

@@ -89,3 +89,17 @@ export function textRange(idx: TextIndex, start: number, end: number): Range | n
 	else r.setEnd(b.node, b.offset + 1);
 	return r;
 }
+
+/** Insert `el` before the indexed character `at` (or after it). */
+export function insertAt(idx: TextIndex, at: number, el: HTMLElement, after = false) {
+	const point = idx.map[at];
+	if (!point) return;
+	const { node, offset } = point;
+	if (offset === -1 || !node.instanceOf(Text)) {
+		node.parentNode?.insertBefore(el, after ? node.nextSibling : node);
+		return;
+	}
+	const split = after ? offset + 1 : offset;
+	if (split >= node.length) node.parentNode?.insertBefore(el, node.nextSibling);
+	else node.parentNode?.insertBefore(el, node.splitText(split));
+}
