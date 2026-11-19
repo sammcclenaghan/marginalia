@@ -7,6 +7,13 @@
 
 <p align="center"><em>Notes and questions in the margin of anything you read or write in Obsidian.</em></p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/screenshot-dark.png">
+    <img alt="Notes in the margin beside their passages in Obsidian" src="assets/screenshot-light.png">
+  </picture>
+</p>
+
 Select a passage and add a note. It sits in the margin beside the passage, and a small number follows the passage. Passages can be any length, cross paragraphs, overlap and nest. A note ending in `?` is a question.
 
 Your text is never touched. Notes live in a plain section at the end of the file, so they read fine in any editor:
