@@ -18,6 +18,9 @@ interface Painted {
 }
 
 const NAMES = ['mg-passage', 'mg-passage-q', 'mg-hover', 'mg-hover-q'] as const;
+
+/** Classes on an inline formula inside a passage (styles.css draws its underline). */
+const MATH_CLASSES = ['mg-math', 'mg-math-q', 'mg-math-hover'];
 type Name = (typeof NAMES)[number];
 
 /**
@@ -32,6 +35,8 @@ class Highlights {
 	/** The hovered note in each view: editors and Reading views hover independently. */
 	private hovered = new Map<Element, string>();
 	private docs = new Set<Document>();
+	/** Inline formulas currently marked as part of a passage. */
+	private formulas = new Set<Element>();
 	private frame = 0;
 
 	add(owner: Element, label: string, q: string, k: number, question: boolean) {
@@ -110,16 +115,28 @@ class Highlights {
 
 	paint() {
 		const sets = new Map<Document, Record<Name, Range[]>>();
+		const formulas = new Map<Element, { question: boolean; hover: boolean }>();
 		for (const [owner, notes] of this.byOwner) {
 			if (!owner.isConnected) continue; // not on the page right now
 			const doc = owner.ownerDocument;
 			let s = sets.get(doc);
 			if (!s) sets.set(doc, (s = { 'mg-passage': [], 'mg-passage-q': [], 'mg-hover': [], 'mg-hover-q': [] }));
+			// In Live Preview the painted element can be the formula itself.
+			const inline = [...(owner.matches('.math') ? [owner] : []), ...Array.from(owner.querySelectorAll('.math'))].filter(
+				(el) => getComputedStyle(el).display === 'inline',
+			);
 			for (const { label, p, ranges } of this.resolve(owner, notes)) {
-				const name = `${this.isHovered(owner, label) ? 'mg-hover' : 'mg-passage'}${p.question ? '-q' : ''}` as const;
+				const hover = this.isHovered(owner, label);
+				const name = `${hover ? 'mg-hover' : 'mg-passage'}${p.question ? '-q' : ''}` as const;
 				s[name].push(...ranges);
+				for (const el of inline) {
+					if (!ranges.some((r) => r.intersectsNode(el))) continue;
+					// Where passages overlap, the hovered one shows.
+					if (!formulas.get(el)?.hover) formulas.set(el, { question: p.question, hover });
+				}
 			}
 		}
+		this.markFormulas(formulas);
 		for (const doc of new Set([...this.docs, ...sets.keys()])) {
 			const win = doc.defaultView;
 			// TypeScript's DOM types don't include the registry's Map methods yet.
@@ -133,6 +150,26 @@ class Highlights {
 			}
 		}
 		this.docs = new Set(sets.keys());
+	}
+
+	/**
+	 * Rendered formulas aren't text, so a highlight's underline skips them.
+	 * Mark the inline ones in passages; styles.css draws the line under them.
+	 */
+	private markFormulas(formulas: Map<Element, { question: boolean; hover: boolean }>) {
+		for (const el of this.formulas) if (!formulas.has(el)) el.removeClass(...MATH_CLASSES);
+		for (const [el, state] of formulas) {
+			el.addClass('mg-math');
+			el.toggleClass('mg-math-q', state.question);
+			el.toggleClass('mg-math-hover', state.hover);
+			// The height of the formula's text box: the underline's spaces fill it
+			// exactly, so they sit on the same baseline as the text around it.
+			const height = `${el.getBoundingClientRect().height}px`;
+			if (el.instanceOf(HTMLElement) && el.style.getPropertyValue('--mg-math-line') !== height) {
+				el.setCssProps({ '--mg-math-line': height });
+			}
+		}
+		this.formulas = new Set(formulas.keys());
 	}
 
 	reset() {

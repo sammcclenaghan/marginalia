@@ -25,7 +25,7 @@ export class ReadingLayout extends Component {
 	private observer: ResizeObserver;
 	private width = -1;
 	private hovered: string | null = null;
-	private frames = { pass: 0, hover: 0 };
+	private frames = { layout: 0, pass: 0, hover: 0 };
 
 	constructor(
 		/** `.markdown-reading-view` */
@@ -41,7 +41,10 @@ export class ReadingLayout extends Component {
 			if (entries.some((e) => e.target !== this.scroller)) this.schedulePass();
 			if (this.scroller.clientWidth === this.width) return;
 			this.width = this.scroller.clientWidth;
-			this.layout();
+			// Next frame: laying out resizes what's being observed.
+			const win = this.container.win;
+			win.cancelAnimationFrame(this.frames.layout);
+			this.frames.layout = win.requestAnimationFrame(() => this.layout());
 		});
 	}
 
@@ -60,8 +63,7 @@ export class ReadingLayout extends Component {
 
 	onunload() {
 		const win = this.container.win;
-		win.cancelAnimationFrame(this.frames.pass);
-		win.cancelAnimationFrame(this.frames.hover);
+		for (const f of Object.values(this.frames)) win.cancelAnimationFrame(f);
 		this.observer.disconnect();
 		highlights.setHover(this.scroller, null);
 		this.container.removeClass(...MODES, 'mg-style-underline', 'mg-style-highlight', 'mg-style-none');

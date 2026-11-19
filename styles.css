@@ -16,6 +16,11 @@ body.theme-dark {
 
 body {
 	--mg-question: var(--color-orange);
+	/* Passage underlines. Mixed with the page rather than made see-through, so
+	   where two lines meet (text and a formula) the overlap doesn't show. */
+	--mg-underline: color-mix(in srgb, var(--text-faint) 45%, var(--background-primary));
+	--mg-underline-accent: color-mix(in srgb, var(--interactive-accent) 80%, var(--background-primary));
+	--mg-underline-question: color-mix(in srgb, var(--mg-question) 80%, var(--background-primary));
 	--mg-field: color-mix(in srgb, var(--text-normal) 4.5%, transparent);
 	--mg-surface: var(--background-primary);
 	--mg-shadow:
@@ -146,18 +151,18 @@ body {
 	text-decoration-skip-ink: auto;
 }
 .mg-style-underline .mg-passage {
-	text-decoration-color: color-mix(in srgb, var(--text-faint) 45%, transparent);
+	text-decoration-color: var(--mg-underline);
 }
 .mg-style-highlight .mg-passage {
 	background-color: var(--text-highlight-bg);
 }
 .mg-passage.is-hover,
 .mg-passage.is-active {
-	text-decoration-color: color-mix(in srgb, var(--interactive-accent) 80%, transparent);
+	text-decoration-color: var(--mg-underline-accent);
 }
 .mg-passage.is-question.is-hover,
 .mg-passage.is-question.is-active {
-	text-decoration-color: color-mix(in srgb, var(--mg-question) 80%, transparent);
+	text-decoration-color: var(--mg-underline-question);
 }
 
 /* A passage inside a lit one lets the lit underline run through it. */
@@ -177,7 +182,7 @@ body {
 }
 .mg-style-underline ::highlight(mg-passage),
 .mg-style-underline ::highlight(mg-passage-q) {
-	text-decoration: underline 1px color-mix(in srgb, var(--text-faint) 45%, transparent);
+	text-decoration: underline 1px var(--mg-underline);
 }
 .mg-style-highlight ::highlight(mg-passage),
 .mg-style-highlight ::highlight(mg-passage-q),
@@ -186,10 +191,58 @@ body {
 	background-color: var(--text-highlight-bg);
 }
 ::highlight(mg-hover) {
-	text-decoration: underline 1px color-mix(in srgb, var(--interactive-accent) 80%, transparent);
+	text-decoration: underline 1px var(--mg-underline-accent);
 }
 ::highlight(mg-hover-q) {
-	text-decoration: underline 1px color-mix(in srgb, var(--mg-question) 80%, transparent);
+	text-decoration: underline 1px var(--mg-underline-question);
+}
+
+/* Inline formulas in passages. Rendered math isn't text, so an underline
+   skips it. Over the formula sits a run of spaces on the same baseline,
+   underlined exactly like the text and clipped to the formula's width: being
+   a real text underline, it lands on the same pixels as the text's. Its line
+   is exactly as tall as the formula's text box (--mg-math-line, measured in
+   highlights.ts), so the spaces' baseline is the formula's, with no rounding. */
+.mg-math {
+	position: relative;
+}
+.mg-math ::highlight(mg-passage),
+.mg-math ::highlight(mg-passage-q),
+.mg-math ::highlight(mg-hover),
+.mg-math ::highlight(mg-hover-q) {
+	text-decoration: none;
+}
+.mg-math::after {
+	content: "\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0\00a0";
+	position: absolute;
+	top: 0;
+	/* 1px past each edge: the formula's edges rarely fall on a whole pixel, and
+	   a shared pixel half-covered by each line would show as a lighter seam. */
+	left: -1px;
+	right: -1px;
+	line-height: var(--mg-math-line, normal);
+	white-space: pre;
+	overflow-x: clip;
+	color: transparent;
+	text-decoration-line: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.3em;
+	text-decoration-skip-ink: none;
+	text-decoration-color: transparent;
+	pointer-events: none;
+	user-select: none;
+}
+.mg-style-underline .mg-math::after {
+	text-decoration-color: var(--mg-underline);
+}
+.mg-math.mg-math-hover::after {
+	text-decoration-color: var(--mg-underline-accent);
+}
+.mg-math.mg-math-hover.mg-math-q::after {
+	text-decoration-color: var(--mg-underline-question);
+}
+.mg-style-highlight .mg-math {
+	background-color: var(--text-highlight-bg);
 }
 
 /* The notes section, hidden in Live Preview where the margin shows it. */
