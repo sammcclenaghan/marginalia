@@ -281,7 +281,9 @@ describe("hand-written and odd sections", () => {
 });
 
 describe("performance", () => {
-	it("parses and anchors 100 notes in a large file quickly", () => {
+	// Building the 0.8 MB fixture (100 notes added one by one) is the slow part;
+	// the timed assertion below is only on parsing it.
+	it("parses and anchors 100 notes in a large file quickly", { timeout: 30_000 }, () => {
 		let big = "";
 		for (let i = 0; i < 400; i++) big += DOC.slice(DOC.indexOf("# Kitchen")).replace(/Kitchen sink/g, `Section ${i}`) + "\n";
 		const rand = rng(3);

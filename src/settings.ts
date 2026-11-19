@@ -1,4 +1,5 @@
-import { PluginSettingTab, SettingDefinitionItem } from 'obsidian';
+import { App, PluginSettingTab, SettingDefinitionItem } from 'obsidian';
+import type MarginaliaPlugin from './main';
 
 export type PassageStyle = 'underline' | 'highlight' | 'none';
 
@@ -22,6 +23,19 @@ export const DEFAULT_SETTINGS: MarginaliaSettings = {
 
 /** Declarative settings: Obsidian renders them and includes them in settings search. */
 export class MarginaliaSettingTab extends PluginSettingTab {
+	constructor(
+		app: App,
+		private readonly marginalia: MarginaliaPlugin,
+	) {
+		super(app, marginalia);
+	}
+
+	/** Saved by Obsidian, then applied to open editors right away. */
+	async setControlValue(key: string, value: unknown) {
+		await super.setControlValue(key, value);
+		this.marginalia.applySettings();
+	}
+
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
 			{

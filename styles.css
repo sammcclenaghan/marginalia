@@ -1,1 +1,343 @@
-/* Marginalia */
+/* Marginalia
+ *
+ * A note at rest is just typography: muted text with a hanging number.
+ * Nothing moves; hover and selection only change colour.
+ */
+
+body.theme-dark {
+	--mg-field: color-mix(in srgb, white 5.5%, transparent);
+	--mg-surface: color-mix(in srgb, var(--background-primary), white 4%);
+	--mg-shadow:
+		inset 0 0.5px 0 rgba(255, 255, 255, 0.05),
+		0 0 0 0.5px color-mix(in srgb, white 11%, transparent),
+		0 2px 4px rgba(0, 0, 0, 0.2),
+		0 12px 32px -8px rgba(0, 0, 0, 0.5);
+}
+
+body {
+	--mg-question: var(--color-orange);
+	--mg-field: color-mix(in srgb, var(--text-normal) 4.5%, transparent);
+	--mg-surface: var(--background-primary);
+	--mg-shadow:
+		0 0 0 0.5px color-mix(in srgb, var(--text-normal) 10%, transparent),
+		0 1px 2px rgba(0, 0, 0, 0.04),
+		0 4px 10px -2px rgba(0, 0, 0, 0.06),
+		0 12px 28px -10px rgba(0, 0, 0, 0.12);
+	--mg-pad-x: 10px; /* PAD in src/editor/margin.ts */
+	--mg-pad-y: 7px;
+	--mg-radius: 10px;
+	--mg-line: 1.55;
+}
+
+/* ------------------------------------------------------------------ */
+/* Note typography                                                     */
+
+.mg-note {
+	--mg-accent: var(--interactive-accent);
+	font-family: var(--font-interface);
+	font-size: 13px;
+	line-height: var(--mg-line);
+	letter-spacing: -0.003em;
+	color: var(--text-muted);
+	text-align: left;
+	text-wrap: pretty;
+	-webkit-font-smoothing: antialiased;
+}
+.mg-note.is-question {
+	--mg-accent: var(--mg-question);
+}
+
+/* Hanging number: sits in the gutter so the text edge stays clean. */
+.mg-note-num {
+	position: absolute;
+	font-size: 10.5px;
+	line-height: calc(13px * var(--mg-line));
+	font-weight: var(--font-medium);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-faint);
+	opacity: 0.8;
+	white-space: nowrap;
+	user-select: none;
+}
+.is-question .mg-note-num {
+	color: color-mix(in srgb, var(--mg-question) 80%, var(--text-faint));
+	opacity: 1;
+}
+
+.mg-note-body > :first-child {
+	margin-top: 0;
+}
+.mg-note-body > :last-child {
+	margin-bottom: 0;
+}
+.mg-note-body p {
+	margin: 0.45em 0;
+}
+.mg-note-body :is(strong, b) {
+	font-weight: var(--font-semibold);
+	color: var(--text-normal);
+}
+.mg-note-body code {
+	font-size: 0.9em;
+	padding: 0.05em 0.3em;
+	border-radius: 4px;
+}
+.mg-note-body a {
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+}
+.mg-placeholder {
+	color: var(--text-faint);
+}
+
+/* ------------------------------------------------------------------ */
+/* In the text: markers and passages                                   */
+
+/* Raised by offsetting, not vertical-align: it keeps the text's baseline, so
+   the underline of a passage around it runs straight through. */
+.mg-marker {
+	position: relative;
+	top: -0.6em;
+	vertical-align: baseline;
+	font-size: 0.64em;
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+	line-height: 0;
+	color: var(--text-faint);
+	cursor: pointer;
+	user-select: none;
+}
+/* A passage's last word and its number never part across lines. */
+.mg-tail {
+	white-space: nowrap;
+}
+/* A comfortable click target for a tiny number. */
+.mg-marker::after {
+	content: "";
+	position: absolute;
+	inset: -9px -7px;
+}
+.mg-marker.is-question {
+	color: color-mix(in srgb, var(--mg-question) 75%, var(--text-faint));
+}
+.mg-marker.is-hover,
+.mg-marker.is-active {
+	color: var(--interactive-accent);
+}
+.mg-marker.is-question.is-hover,
+.mg-marker.is-question.is-active {
+	color: var(--mg-question);
+}
+
+/* Passages (CodeMirror marks), styled by the passage style setting. */
+.mg-passage {
+	text-decoration-line: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.3em;
+	text-decoration-color: transparent;
+	text-decoration-skip-ink: auto;
+}
+.mg-style-underline .mg-passage {
+	text-decoration-color: color-mix(in srgb, var(--text-faint) 45%, transparent);
+}
+.mg-style-highlight .mg-passage {
+	background-color: var(--text-highlight-bg);
+}
+.mg-passage.is-hover,
+.mg-passage.is-active {
+	text-decoration-color: color-mix(in srgb, var(--interactive-accent) 80%, transparent);
+}
+.mg-passage.is-question.is-hover,
+.mg-passage.is-question.is-active {
+	text-decoration-color: color-mix(in srgb, var(--mg-question) 80%, transparent);
+}
+
+/* A passage inside a lit one lets the lit underline run through it. */
+:is(.mg-passage.is-hover, .mg-passage.is-active) .mg-passage:not(.is-hover, .is-active) {
+	text-decoration-color: transparent;
+}
+
+/* Passages in rendered widgets and Reading view (CSS Custom Highlight API). */
+.mg-style-underline ::highlight(mg-passage),
+.mg-style-underline ::highlight(mg-passage-q) {
+	text-decoration: underline 1px color-mix(in srgb, var(--text-faint) 45%, transparent);
+}
+.mg-style-highlight ::highlight(mg-passage),
+.mg-style-highlight ::highlight(mg-passage-q),
+.mg-style-highlight ::highlight(mg-hover),
+.mg-style-highlight ::highlight(mg-hover-q) {
+	background-color: var(--text-highlight-bg);
+}
+::highlight(mg-hover) {
+	text-decoration: underline 1px color-mix(in srgb, var(--interactive-accent) 80%, transparent);
+}
+::highlight(mg-hover-q) {
+	text-decoration: underline 1px color-mix(in srgb, var(--mg-question) 80%, transparent);
+}
+
+/* The notes section, hidden in Live Preview where the margin shows it. */
+.mg-hidden-section {
+	height: 0;
+	overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ */
+/* The margin                                                          */
+
+/* Room for the margin when the text is too wide for it (the same selector
+   Obsidian uses for the file margins, plus our class). */
+.view-content > .markdown-source-view.mod-cm6 > .cm-editor > .cm-scroller.mg-reserve {
+	padding-right: var(--mg-reserve);
+}
+
+.mg-margin {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 0;
+	height: 0;
+	z-index: 3;
+}
+.mg-margin[data-mode="none"] {
+	display: none;
+}
+
+.mg-note {
+	position: absolute;
+	top: 0;
+	left: 0;
+	box-sizing: border-box;
+	width: var(--mg-w);
+	transform: translate(var(--mg-x), var(--mg-y));
+	padding: var(--mg-pad-y) var(--mg-pad-x);
+	border-radius: var(--mg-radius);
+	cursor: pointer;
+}
+.mg-note .mg-note-num {
+	top: var(--mg-pad-y);
+	right: calc(100% + 4px);
+}
+/* Hidden until it has been placed. */
+.mg-note.is-entering {
+	visibility: hidden;
+}
+
+.mg-note:hover,
+.mg-note.is-hover,
+.mg-note.is-active {
+	color: var(--text-normal);
+}
+.mg-note:hover .mg-note-num,
+.mg-note.is-hover .mg-note-num,
+.mg-note.is-active .mg-note-num {
+	color: var(--mg-accent);
+	opacity: 1;
+}
+
+/* Editing: a flat field set into the page. Tinted; no border, no shadow. */
+.mg-note.is-editing {
+	color: var(--text-normal);
+	background-color: var(--mg-field);
+	cursor: text;
+}
+.mg-note.is-editing .mg-note-num {
+	color: var(--mg-accent);
+	opacity: 1;
+}
+.mg-note-input,
+.mg-note-input:hover,
+.mg-note-input:focus,
+.mg-note-input:focus-visible {
+	display: block;
+	width: 100%;
+	min-height: calc(1em * var(--mg-line));
+	padding: 0 24px 0 0; /* room for the delete icon */
+	margin: 0;
+	border: none;
+	border-radius: 0;
+	outline: none;
+	box-shadow: none;
+	background: transparent;
+	resize: none;
+	overflow: hidden;
+	font: inherit;
+	line-height: inherit;
+	letter-spacing: inherit;
+	color: var(--text-normal);
+	caret-color: var(--mg-accent);
+}
+.mg-note-input::placeholder {
+	color: var(--text-faint);
+}
+
+/* Delete: only while editing (or on a selected note on touch screens).
+   Centred on the first line, its icon inset from the edge like the text. */
+.mg-note-delete.clickable-icon {
+	--mg-button: 22px;
+	--mg-icon: 14px;
+	display: none;
+	position: absolute;
+	top: calc(var(--mg-pad-y) + (13px * var(--mg-line) - var(--mg-button)) / 2);
+	right: calc(var(--mg-pad-x) - (var(--mg-button) - var(--mg-icon)) / 2);
+	width: var(--mg-button);
+	height: var(--mg-button);
+	padding: 0;
+	place-items: center;
+	border-radius: 6px;
+	color: var(--text-faint);
+}
+.mg-note.is-editing .mg-note-delete,
+.is-mobile .mg-note.is-active .mg-note-delete {
+	display: grid;
+}
+.mg-note-delete.clickable-icon:hover {
+	color: var(--text-error);
+	background-color: var(--background-modifier-hover);
+}
+.mg-note-delete svg {
+	width: var(--mg-icon);
+	height: var(--mg-icon);
+	stroke-width: 1.75;
+}
+
+/* The passage of a note being written. */
+.mg-passage.mg-draft {
+	text-decoration-color: var(--interactive-accent);
+	text-decoration-thickness: 1.5px;
+}
+
+/* Narrow panes: a note opens as a popover under its passage. */
+.mg-margin[data-mode="narrow"] .mg-note:not(.is-open) {
+	display: none;
+}
+.mg-margin[data-mode="narrow"] .mg-note.is-open {
+	z-index: 5;
+	color: var(--text-normal);
+	background-color: var(--mg-surface);
+	box-shadow: var(--mg-shadow);
+}
+.mg-margin[data-mode="narrow"] .mg-note.is-open .mg-note-num {
+	position: static;
+	float: left;
+	margin-right: 6px;
+}
+
+/* Crowded: one line, so the next note can stay beside its passage. */
+.mg-note.is-collapsed .mg-note-body {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 1;
+	line-clamp: 1;
+	max-height: calc(13px * var(--mg-line));
+	overflow: hidden;
+}
+
+/* ------------------------------------------------------------------ */
+/* Print and PDF export: the article, then the notes section          */
+
+@media print {
+	.mg-margin,
+	.mg-marker {
+		display: none;
+	}
+}
