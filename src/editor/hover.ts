@@ -14,8 +14,7 @@ export function noteUnderPointer(view: EditorView, model: Model, target: Element
 	if (marker) return marker.dataset.mgLabel ?? null;
 	if (target.closest(WIDGET)) {
 		// Rendered widgets: the painted passages know where their words are.
-		const at = target.doc.caretPositionFromPoint(x, y);
-		return at ? (highlights.at(view.dom, at.offsetNode, at.offset)[0] ?? null) : null;
+		return highlights.atPoint(view.dom, x, y);
 	}
 	if (target.closest('.cm-line')) return noteAt(model, view.posAtCoords({ x, y }, false))?.label ?? null;
 	return null;

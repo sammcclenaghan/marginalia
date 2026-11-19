@@ -12,6 +12,8 @@ const EDGE = 20; // between the notes and the pane edge
 const MIN_TEXT = 420; // narrowest the text gets to make room for the margin
 /** How far a note may sit below its passage before the one above it is shortened. */
 const DRIFT = 12;
+/** Between a passage's last line and its popover (clears the underline). */
+const BELOW = 12;
 
 export const MODES = ['mg-reading', 'mg-r-margin', 'mg-r-narrow', 'mg-r-reserve'];
 
@@ -135,8 +137,7 @@ export class ReadingLayout extends Component {
 		this.frames.hover = win.requestAnimationFrame(() => {
 			const marker = target.closest<HTMLElement>('.mg-marker');
 			if (marker) return this.setHover(marker.dataset.mgLabel ?? null);
-			const at = target.doc.caretPositionFromPoint(x, y);
-			this.setHover(at ? (highlights.at(this.scroller, at.offsetNode, at.offset)[0] ?? null) : null);
+			this.setHover(highlights.atPoint(this.scroller, x, y));
 		});
 	}
 
@@ -173,9 +174,10 @@ export class ReadingLayout extends Component {
 			const section = side.closest<HTMLElement>('.markdown-preview-sizer > div');
 			const marker = target.closest<HTMLElement>('.mg-marker');
 			if (!open || !section || !marker) return;
-			const y = lineBottom(marker) - section.getBoundingClientRect().top + 6;
+			const y = lineBottom(marker) - section.getBoundingClientRect().top + BELOW;
 			side.setCssProps({ '--mg-pop-y': `${y}px` });
 			side.addClass('is-open');
+			this.setHover(label); // light up its passage, as the editor does
 		} else if (side.hasClass('is-collapsed') || side.hasClass('is-pinned')) {
 			side.toggleClass('is-pinned', !side.hasClass('is-pinned'));
 			this.shorten();
@@ -183,7 +185,9 @@ export class ReadingLayout extends Component {
 	}
 
 	private closePopovers() {
-		this.container.querySelectorAll('.mg-side.is-open').forEach((el) => el.removeClass('is-open'));
+		const open = this.container.querySelectorAll('.mg-side.is-open');
+		open.forEach((el) => el.removeClass('is-open'));
+		if (open.length) this.setHover(null);
 	}
 }
 

@@ -301,6 +301,11 @@ body {
 .is-mobile .mg-note.is-active .mg-note-delete {
 	display: grid;
 }
+/* A finger-sized target on touch screens. */
+.is-mobile .mg-note-delete.clickable-icon {
+	--mg-button: 36px;
+	--mg-icon: 16px;
+}
 .mg-note-delete.clickable-icon:hover {
 	color: var(--text-error);
 	background-color: var(--background-modifier-hover);
@@ -321,7 +326,11 @@ body {
 .mg-margin[data-mode="narrow"] .mg-note:not(.is-open) {
 	display: none;
 }
+/* The number, then the note (or its field) beside it. */
 .mg-margin[data-mode="narrow"] .mg-note.is-open {
+	display: flex;
+	gap: 6px;
+	align-items: baseline;
 	z-index: 5;
 	color: var(--text-normal);
 	background-color: var(--mg-surface);
@@ -329,8 +338,11 @@ body {
 }
 .mg-margin[data-mode="narrow"] .mg-note.is-open .mg-note-num {
 	position: static;
-	float: left;
-	margin-right: 6px;
+	flex: none;
+}
+.mg-margin[data-mode="narrow"] .mg-note.is-open .mg-note-body {
+	flex: 1;
+	min-width: 0;
 }
 
 /* Crowded: one line, so the next note can stay beside its passage. */

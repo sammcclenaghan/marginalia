@@ -82,6 +82,14 @@ class Highlights {
 		return hits.sort((a, b) => a.size - b.size).map((h) => h.label);
 	}
 
+	/** The innermost passage under a point on screen (null where the browser can't tell). */
+	atPoint(container: Element, x: number, y: number): string | null {
+		const doc: Partial<Pick<Document, 'caretPositionFromPoint'>> = container.doc;
+		// Older iOS WebKit lacks it, and taps there still send mouse events.
+		const at = doc.caretPositionFromPoint?.(x, y);
+		return at ? (this.at(container, at.offsetNode, at.offset)[0] ?? null) : null;
+	}
+
 	setHover(container: Element, label: string | null) {
 		if (this.hovered.get(container) === (label ?? undefined)) return;
 		if (label) this.hovered.set(container, label);

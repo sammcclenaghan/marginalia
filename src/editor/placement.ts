@@ -10,6 +10,7 @@ const EDGE = 20; // between the notes and the pane edge
 const MIN_TEXT = 420; // narrowest the text gets to make room for the margin
 const PAD = 10; // card padding (styles.css: --mg-pad-x)
 const POPOVER = 380; // widest a popover gets
+const BELOW = 12; // between a passage's last line and its popover (clears the underline)
 
 export type Mode = 'none' | 'margin' | 'narrow';
 
@@ -131,7 +132,7 @@ export function placePopover(m: Measured, cards: Map<string, NoteCard>, open: st
 		card.el.toggleClass('is-active', isOpen);
 		card.setCollapsed(false);
 		if (!isOpen) continue;
-		const y = (m.bottoms.get(label) ?? 0) + 6;
+		const y = (m.bottoms.get(label) ?? 0) + BELOW;
 		card.el.setCssProps({ '--mg-x': `${m.textLeft}px`, '--mg-y': `${y}px`, '--mg-w': `${width}px` });
 		card.reveal();
 	}
